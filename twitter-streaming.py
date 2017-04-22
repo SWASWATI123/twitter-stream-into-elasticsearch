@@ -29,7 +29,7 @@ def put_stream(es, twitter_stream):
         try:
             if 'lang' in tweet and tweet['lang'] == 'ja':
                 dic = {
-                    'id': tweet['id'],
+                    'tweet_id': tweet['id'],
                     'screen_name': tweet['user']['screen_name'],
                     'text': tweet['text']
                 }
@@ -37,10 +37,12 @@ def put_stream(es, twitter_stream):
                     # hash tags is array.
                     dic['hashtags'] = tweet['entities']['hashtags']
 
-                es.index(index="tweeter", doc_type='tweet', body=dic)
+                es.index(index="twitter", doc_type='tweet', body=dic)
                 # dict to JSON.
-                # print(json.dumps(dic, ensure_ascii=False))
+                print(json.dumps(dic, ensure_ascii=False))
         except:
+            import traceback
+            traceback.print_exc()
             pass
 
 
