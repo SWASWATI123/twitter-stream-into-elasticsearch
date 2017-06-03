@@ -36,10 +36,6 @@ python ./twitter-streaming.py
 
 http://localhost:5601/
 
-## TODO
-
-Need to create mapping.json
-
 ## My note
 Reference:
 [https://www.elastic.co/guide/en/elasticsearch/plugins/current/analysis-kuromoji-tokenizer.html](https://www.elastic.co/guide/en/elasticsearch/plugins/current/analysis-kuromoji-tokenizer.html)
@@ -149,7 +145,7 @@ GET /twitter/tweet/_search
   }
 }
 ```
-#### must search '誕生日' and　must not 'おめでとう' (json type)
+#### must search '誕生日' and　must not search 'おめでとう' (json type)
 ```
 GET /twitter/tweet/_search
 {
@@ -169,3 +165,96 @@ GET /twitter/tweet/_search
   }
 }
 ```
+
+## create index using with kuromoji_neologd_tokenizer
+```
+PUT twitter
+{
+  "settings": {
+    "index": {
+      "analysis": {
+        "tokenizer": {
+          "kuromoji_user_dict": {
+            "type": "kuromoji_neologd_tokenizer",
+            "mode": "normal"
+          }
+        },
+        "analyzer": {
+          "my_analyzer": {
+            "type": "custom",
+            "tokenizer": "kuromoji_user_dict",
+            "filter": [
+              "kuromoji_part_of_speech"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "mappings": {
+    "tweet": {
+      "dynamic": "strict",
+      "properties": {
+        "tweet_id": {
+          "type": "string"
+        },
+        "screen_name": {
+          "type": "string",
+          "analyzer": "my_analyzer"
+        },
+        "text": {
+          "type": "string",
+          "analyzer": "my_analyzer"
+        },
+        "hashtags": {
+          "type": "nested",
+          "properties": {
+            "type": {
+              "type": "string",
+              "analyzer": "my_analyzer"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+```
+### 
+```
+GET /twitter/tweet/_search
+{
+  "query": {
+    "match": {
+      "text": "聲の形"
+    }
+  }
+}
+```
+
+### Result - Hit the below
+```
+  "hits": {
+    "total": 3,
+    "max_score": 11.43711,
+    "hits": [
+      {
+        "_index": "twitter",
+        "_type": "tweet",
+        "_score": 11.43711,
+        "_source": {
+          "text": "聲の形....",
+          "tweet_id": ,
+          "screen_name": ""
+        }
+      },
+      ...
+```
+
+
+## TODO
+Add Japanese custom dict file.(Change docker file).
+
+## Reference
+[https://github.com/codelibs/elasticsearch-analysis-kuromoji-neologd](https://github.com/codelibs/elasticsearch-analysis-kuromoji-neologd)
